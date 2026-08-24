@@ -56,40 +56,46 @@ dashscope-media/
 
 ## 🚀 安装
 
-### 方式 1：pi（官方推荐）
+> 本 skill 采用 **Agent Skills 标准格式**，兼容 Claude Code / Codex / Cursor / Gemini / Copilot 等 70+ agent（pi 用户见方式 3）。
+> 按你的环境任选一种方式，**推荐方式 1（一行命令）**。
+
+### 方式 1：npx skills add 一行命令（推荐，跨 70+ agent 通用）
+
+需要 Node.js（`npx` 随 npm 自带），适合任何 agent 用户：
 
 ```bash
-pi install git:github.com/chenyang-99/dashscope-media
+# 安装到指定 agent（codex / claude-code / cursor / gemini ...）
+npx skills add chenyang-99/dashscope-media --skill dashscope-media --agent codex
+
+# 装到所有支持的 agent
+npx skills add chenyang-99/dashscope-media --skill dashscope-media --all
+
+# 装到用户目录（而非项目目录）
+npx skills add chenyang-99/dashscope-media --skill dashscope-media -g
 ```
 
-或从 npm 安装（发布后）：
+装完重启对应 agent 即可生效。
 
-```bash
-pi install npm:dashscope-media
-```
+### 方式 2：手动复制（零依赖，任何环境都行）
 
-### 方式 2：skill.sh（跨 agent 通用）
-
-```bash
-# 安装到 pi
-skill.sh install pi https://github.com/chenyang-99/dashscope-media
-
-# 或使用 npx skills CLI
-npx skills add chenyang-99/dashscope-media --skill dashscope-media
-```
-
-### 方式 3：手动复制（任何 agent）
-
-把仓库里的 `skills/dashscope-media/` 整个目录复制到对应位置：
+不需要装任何工具，直接把仓库里的 `skills/dashscope-media/` 整个目录复制到目标位置：
 
 | Agent | 安装位置 |
 |---|---|
 | pi | `~/.pi/agent/skills/` |
 | Codex | `~/.agents/skills/` |
 | Claude Code | `~/.claude/skills/` |
-| 项目级（任何） | 仓库内 `.agents/skills/` 或 `.pi/skills/` |
+| 项目级（任何 agent） | 仓库内 `.agents/skills/` 或 `.pi/skills/` |
 
-复制完成后重启 agent 即可生效。
+复制完成后**重启 agent** 即可生效。
+
+### 方式 3：pi 用户（仅 pi 环境）
+
+```bash
+pi install git:github.com/chenyang-99/dashscope-media
+```
+
+（npm 发布后也可 `pi install npm:dashscope-media`）
 
 ---
 
