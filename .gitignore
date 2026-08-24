@@ -1,0 +1,14 @@
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 系统/编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 密钥（保险起见忽略所有可能的 key 文件）
+*.key
+*key*.txt
+.env
