@@ -11,8 +11,12 @@ dashscope_media.py — 阿里百炼（DashScope 国际版）通义万相 图片/
   poll <task_id>               查询异步任务状态
 
 依赖：仅 Python 3.8+ 标准库（urllib），无需 pip 安装。
-Key 读取：环境变量 DASHSCOPE_API_KEY → C:/Users/Lenovo/.config/company/dashscope_key.txt
-端点：https://dashscope-intl.aliyuncs.com/api/v1 （国际版）
+Key 读取：环境变量 DASHSCOPE_API_KEY → ~/.config/company/dashscope_key.txt
+端点（双区域都支持）：
+  --region intl（默认）→ 国际版 https://dashscope-intl.aliyuncs.com/api/v1
+  --region cn         → 国内版 https://dashscope.aliyuncs.com/api/v1
+  --region <完整URL>  → 自定义端点
+  或环境变量 DASHSCOPE_ENDPOINT / DASHSCOPE_REGION（intl|cn|URL）
 """
 import argparse
 import json
@@ -28,8 +32,26 @@ try:
 except Exception:
     pass
 
-BASE_URL = "https://dashscope-intl.aliyuncs.com/api/v1"
+REGIONS = {
+    "intl": "https://dashscope-intl.aliyuncs.com/api/v1",  # 国际版
+    "cn": "https://dashscope.aliyuncs.com/api/v1",         # 国内版
+}
+BASE_URL = REGIONS["intl"]  # 默认国际版；main() 里按 --region / 环境变量调整
 KEY_FILE = os.path.expanduser("~/.config/company/dashscope_key.txt")
+
+
+def resolve_base_url(region):
+    """解析端点：--region 参数 > 环境变量 DASHSCOPE_ENDPOINT/DASHSCOPE_REGION > 默认 intl。
+    支持 intl / cn / 完整 URL 三种写法。"""
+    val = region
+    if not val:
+        val = os.environ.get("DASHSCOPE_ENDPOINT", "") or os.environ.get("DASHSCOPE_REGION", "intl")
+    val = str(val).strip()
+    if val.lower() in REGIONS:
+        return REGIONS[val.lower()]
+    if val.lower().startswith(("http://", "https://")):
+        return val.rstrip("/")
+    sys.exit(f"[错误] 未知区域: {val}（可选 intl / cn，或直接传完整端点 URL）")
 
 # 图片模型（国际版；最终可用性以调用为准）
 IMAGE_MODELS = {
@@ -294,14 +316,16 @@ def cmd_models(_args):
     print("\n== 视频模型 ==")
     for m, d in VIDEO_MODELS.items():
         print(f"  {m:<24} {d}")
-    print("\n[只读] 列表来自本地配置；国际版实际可用模型以调用为准。")
+    print("\n[只读] 列表来自本地配置；国际版/国内版实际可用模型以调用为准。")
 
 
 def build_parser():
     p = argparse.ArgumentParser(description="阿里百炼 通义万相 图片/视频生成")
     sub = p.add_subparsers(dest="cmd")
 
-    sub.add_parser("models", help="列出支持的模型（只读）").set_defaults(func=cmd_models)
+    mp = sub.add_parser("models", help="列出支持的模型（只读）")
+    mp.add_argument("--region", default=None, help="intl 国际版(默认) / cn 国内版 / 完整URL")
+    mp.set_defaults(func=cmd_models)
 
     g = sub.add_parser("gen-image", help="文生图")
     g.add_argument("--prompt", required=True)
@@ -313,6 +337,7 @@ def build_parser():
     g.add_argument("--negative-prompt", default=None)
     g.add_argument("--n", type=int, required=True, help="生成数量（必填，由你决定，如 1/2/4；不设默认）")
     g.add_argument("--out-dir", required=True)
+    g.add_argument("--region", default=None, help="intl 国际版(默认) / cn 国内版 / 完整URL")
     g.set_defaults(func=gen_image)
 
     v = sub.add_parser("gen-video", help="文生视频")
@@ -321,6 +346,7 @@ def build_parser():
     v.add_argument("--duration", type=int, required=True, help="时长 2-15 秒（必填）")
     v.add_argument("--resolution", required=True, help="480P/720P/1080P（必填）")
     v.add_argument("--out-dir", required=True)
+    v.add_argument("--region", default=None, help="intl 国际版(默认) / cn 国内版 / 完整URL")
     v.set_defaults(func=gen_video)
 
     iv = sub.add_parser("gen-video-from-image", help="图生视频（首帧）")
@@ -330,11 +356,13 @@ def build_parser():
     iv.add_argument("--duration", type=int, required=True, help="时长 2-15 秒（必填）")
     iv.add_argument("--resolution", required=True, help="480P/720P/1080P（必填）")
     iv.add_argument("--out-dir", required=True)
+    iv.add_argument("--region", default=None, help="intl 国际版(默认) / cn 国内版 / 完整URL")
     iv.set_defaults(func=gen_video_from_image)
 
     pl = sub.add_parser("poll", help="查询异步任务")
     pl.add_argument("task_id")
     pl.add_argument("--max-wait", type=int, default=None)
+    pl.add_argument("--region", default=None, help="intl 国际版(默认) / cn 国内版 / 完整URL")
     pl.set_defaults(func=cmd_poll)
     return p
 
@@ -345,6 +373,8 @@ def main():
     if not getattr(args, "cmd", None):
         p.print_help()
         return
+    global BASE_URL
+    BASE_URL = resolve_base_url(getattr(args, "region", None))
     args.func(args)
 
 

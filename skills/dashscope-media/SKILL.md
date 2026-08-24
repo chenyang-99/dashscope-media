@@ -2,7 +2,7 @@
 name: dashscope-media
 displayName: "DashScope Media — 阿里百炼通义万相图片/视频生成"
 description: >
-  调用阿里云百炼（DashScope 国际版）通义万相模型生成图片与视频。图片支持
+  调用阿里云百炼（DashScope 国际版/国内版）通义万相模型生成图片与视频。图片支持
   原生 9:16 / 16:9 / 1:1 等比例；视频支持文生视频、图生视频、首尾帧，
   异步任务自动轮询并下载成片。触发词："百炼"、"阿里百炼"、"通义万相"、
   "wanx"、"wan2"、"dashscope 生图/生视频"、或用图片/视频模型生成。
@@ -10,7 +10,7 @@ description: >
 
 # DashScope Media — 阿里百炼 通义万相 图片/视频生成
 
-调用**阿里云百炼国际版**（DashScope Intl）的通义万相（wanx / wan2.x）系列模型，
+调用**阿里云百炼**（DashScope，国际版/国内版均可）的通义万相（wanx / wan2.x）系列模型，
 生成图片与视频。图片**原生支持 9:16 竖版**（短视频封面）、视频支持文生视频/图生视频，
 任务完成后自动下载到本地。
 
@@ -22,10 +22,13 @@ description: >
 
 ## 前置条件
 
-- **Key 文件**：`~/.config/company/dashscope_key.txt`（阿里百炼**国际版** Key，各人自己的家目录）
+- **Key 文件**：`~/.config/company/dashscope_key.txt`（阿里百炼 Key，各人自己的家目录）
   - 脚本读取顺序：`DASHSCOPE_API_KEY` 环境变量 → 上述 key 文件
-- **端点（国际版，必须）**：`https://dashscope-intl.aliyuncs.com/api/v1`
-  - ⚠️ 不要用国内端点 `dashscope.aliyuncs.com`，国际版 Key 在那边会鉴权失败
+- **区域/端点（国际版、国内版都支持）**：
+  - 国际版（默认）：`--region intl` → `https://dashscope-intl.aliyuncs.com/api/v1`
+  - 国内版：`--region cn` → `https://dashscope.aliyuncs.com/api/v1`
+  - 也可环境变量 `DASHSCOPE_REGION=cn|intl` 或 `DASHSCOPE_ENDPOINT=<完整URL>` 切换
+  - ⚠️ 用哪个区域的 Key，就配哪个区域的端点（两边 Key 不通用）
 - **依赖**：Python 3.8+，仅标准库（urllib），无需 pip 安装
 
 ## 快速上手
@@ -35,11 +38,13 @@ description: >
 python3 ~/.pi/agent/skills/dashscope-media/scripts/dashscope_media.py models
 
 # 生成图片（文生图，9:16 竖版；以下参数全部必填，由你按需指定）
+# 默认国际版；用国内版时加 --region cn
 python3 ~/.pi/agent/skills/dashscope-media/scripts/dashscope_media.py gen-image \
   --prompt "一只可爱的柴犬坐在海边，夕阳，电影感" \
   --model wan2.6-t2i \
   --size 720x1280 \
   --n 1 \
+  --region cn \
   --out-dir D:/Projects/ai_media
 
 # 生成视频（文生视频，异步自动轮询并下载；模型/时长/分辨率全部自己定）
@@ -159,14 +164,14 @@ GET {base}/tasks/{task_id}
 - **⚠️ 实测坑 1（尺寸格式）**：国际版 `wan2.6-t2i` 的 size 要求 `width*height`（用 `*` 不是 `x`）。脚本已自动把 `720x1280` 规范化成 `720*1280`，直接传 `--size 720x1280` 即可
 - **⚠️ 实测坑 2（默认多张）**：官方 `wan2.6-t2i` 不带数量参数时默认生成 **4 张**（按 4 张扣费）。脚本已把 `--n` 以及模型/尺寸/时长/分辨率**全部设为必填**——不设任何默认，每次由你显式指定，避免多扣费
 - **⚠️ 实测坑 3（响应结构）**：新版接口图片 URL 在 `output.choices[].message.content[].image` 字段（不是 `url`），脚本已兼容全部结构并自动下载
-- **⚠️ 实测坑 4（国际版模型不全）**：`wan-2.7-image` 在国际版报 `Model not exist`，未开通；国际版实际可用的是 **wan2.6-t2i** 等，旗舰款用 `wan2.6-t2i` 即可
+- **⚠️ 实测坑 4（国际版模型不全）**：`wan-2.7-image` 在国际版报 `Model not exist`，未开通；国际版实际可用的是 **wan2.6-t2i** 等。**国内版模型通常更全**，报 `Model not exist` 时可加 `--region cn` 尝试
 - **文字排版**：通义万相对中文标题渲染一般，封面含大量文字时优先考虑 gpt-image-2（RunComfy）或 Seedream
 - **错误排查**：
-  - `InvalidApiKey` / 401 → Key 无效或端点用错（检查是否用了 intl 端点）
+  - `InvalidApiKey` / 401 → Key 无效或区域/端点不匹配（用哪个区域的 Key 就配哪个区域端点）
   - `InvalidParameter` / 400 → 参数格式不对（如 size 格式），看 message 提示
   - `Throttling` / 429 → 限流，稍后重试
   - `Arrearage` → 百炼账户欠费/余额不足
-  - 模型不存在 → 该模型在国际版未开通，换列表内模型
+  - 模型不存在 → 该模型在所选区域未开通，换列表内模型或加 `--region cn`（国内版模型更全）
 
 ## 目录结构
 

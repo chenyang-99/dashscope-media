@@ -1,6 +1,6 @@
 # DashScope Media — 阿里百炼通义万相 图片/视频生成 Skill
 
-一个开源的 **Agent Skill**，封装阿里云百炼（DashScope **国际版**）通义万相（wanx / wan2.x）模型，支持：
+一个开源的 **Agent Skill**，封装阿里云百炼（DashScope，**国际版/国内版均可**）通义万相（wanx / wan2.x）模型，支持：
 - **图片**：文生图，**原生 9:16 竖版**（短视频封面）、16:9 / 1:1 等任意宽高比
 - **视频**：文生视频、图生视频、首尾帧，异步任务自动轮询并下载成片
 
@@ -40,13 +40,17 @@ dashscope-media/
 ## 📋 前置条件
 
 1. **Python 3.8+**（仅标准库，无第三方依赖）
-2. **阿里百炼国际版 API Key**（开通通义万相模型）：
-   - 获取：阿里云百炼国际版控制台 → API-KEY
+2. **阿里百炼 API Key**（开通通义万相模型，国际版/国内版任选其一）：
+   - 获取：阿里云百炼控制台 → API-KEY（国际版用国际控制台，国内版用国内控制台）
    - 两种配置方式（任选其一）：
      - 方式 A：写入文件 `~/.config/company/dashscope_key.txt`（仅内容，无换行）
      - 方式 B：设置环境变量 `DASHSCOPE_API_KEY`
    - 脚本读取顺序：环境变量 → key 文件
-   - ⚠️ 必须使用**国际版**端点 `https://dashscope-intl.aliyuncs.com`，国内端点会鉴权失败
+   - **区域/端点**（默认国际版）：
+     - 国际版：`--region intl` → `https://dashscope-intl.aliyuncs.com`
+     - 国内版：`--region cn` → `https://dashscope.aliyuncs.com`
+     - 也可环境变量 `DASHSCOPE_REGION=cn` / `DASHSCOPE_ENDPOINT=<完整URL>` 切换
+     - ⚠️ 用哪个区域的 Key 就配哪个区域端点（两边 Key 不通用）
 
 ---
 
@@ -144,7 +148,7 @@ python3 ~/.pi/agent/skills/dashscope-media/scripts/dashscope_media.py poll <task
 | `wan2.7-i2v` | 2.7 图生视频（首帧/首尾帧/续写） |
 | `wan2.6-i2v` / `wan2.6-i2v-flash` | 2.6 图生视频（含极速版） |
 
-> ⚠️ 实测：国际版部分旗舰模型（如 `wan-2.7-image`）可能报 `Model not exist`（未开通），可用 `wan2.6-t2i` 等替代。
+> ⚠️ 实测：国际版部分旗舰模型（如 `wan-2.7-image`）可能报 `Model not exist`（未开通）；国内版模型通常更全，可加 `--region cn` 尝试。
 
 ---
 
@@ -153,7 +157,7 @@ python3 ~/.pi/agent/skills/dashscope-media/scripts/dashscope_media.py poll <task
 1. **尺寸格式**：国际版 `wan2.6-t2i` 的 size 要求 `width*height`（`*` 不是 `x`）。脚本已自动把 `720x1280` 规范化成 `720*1280`，直接传 `--size 720x1280` 即可。
 2. **默认多张**：官方 `wan2.6-t2i` 不带数量参数时默认生成 **4 张**（按 4 张扣费）。脚本已把 `--n` 设为必填，**无默认**，避免多扣费。
 3. **响应结构**：新版接口图片 URL 在 `output.choices[].message.content[].image` 字段，脚本已兼容全部结构并自动下载。
-4. **国际版模型不全**：国际版部分模型未开通，报 `Model not exist` 时换列表内模型。
+4. **国际版模型不全**：国际版部分模型未开通，报 `Model not exist` 时可加 `--region cn` 试国内版（模型更全）或换列表内模型。
 5. **文字渲染**：通义万相对中文标题渲染一般，封面含大量文字时建议用 gpt-image-2 / Seedream。
 
 **错误排查：**
