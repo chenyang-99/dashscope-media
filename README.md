@@ -59,7 +59,7 @@ dashscope-media/
 ### 方式 1：pi（官方推荐）
 
 ```bash
-pi install git:github.com/ztdrvp5ywn-dotcom/dashscope-media
+pi install git:github.com/chenyang-99/dashscope-media
 ```
 
 或从 npm 安装（发布后）：
@@ -72,10 +72,10 @@ pi install npm:dashscope-media
 
 ```bash
 # 安装到 pi
-skill.sh install pi https://github.com/ztdrvp5ywn-dotcom/dashscope-media
+skill.sh install pi https://github.com/chenyang-99/dashscope-media
 
 # 或使用 npx skills CLI
-npx skills add ztdrvp5ywn-dotcom/dashscope-media --skill dashscope-media
+npx skills add chenyang-99/dashscope-media --skill dashscope-media
 ```
 
 ### 方式 3：手动复制（任何 agent）
