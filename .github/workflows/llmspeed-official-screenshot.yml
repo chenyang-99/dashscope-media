@@ -34,7 +34,7 @@ jobs:
             let body = await page.locator('body').innerText();
             console.log('RACE IN PROGRESS:',body.slice(0,1800));
             if (!page.url().startsWith('https://llmspeed.dev/')) throw Error('Not on official origin');
-            if (!/Qwen 3\\.5 9B/i.test(body) || !/3060/.test(body) || !/4090/.test(body)) throw Error('Incorrect model or Race config; refusing screenshot');
+            if (!/Qwen 3\.5 9B/i.test(body) || !/3060/.test(body) || !/4090/.test(body)) throw Error('Incorrect model or Race config; refusing screenshot');
             fs.mkdirSync('screenshots',{recursive:true});
             await page.screenshot({path:'screenshots/llmspeed-qwen35-race-midstream-official.png',clip:{x:250,y:84,width:945,height:440},animations:'disabled'});
             await page.screenshot({path:'screenshots/llmspeed-qwen35-race-midstream-full.png',fullPage:true,animations:'disabled'});
