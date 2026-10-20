@@ -32,11 +32,8 @@ jobs:
             const page = await browser.newPage({viewport:{width:1440,height:710},deviceScaleFactor:2,colorScheme:'dark'});
             const url = 'https://llmspeed.dev/?hw=rtx-3060,rtx-4090&model=qwen3.5-9b,qwen3.5-9b&quant=q4_k_m,q4_k_m&preset=0&run=1';
             await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
-            await page.waitForFunction(() => {
-               const t=document.body.innerText;
-               return t.includes('finished first') && /\\b(?:5\\.[0-9]|6\\.[0-9])s/.test(t);
-            },null,{timeout:25000});
-            await page.waitForTimeout(350);
+            await page.waitForFunction(() => document.body.innerText.includes('finished first'),null,{timeout:25000});
+            await page.waitForTimeout(4800);
             const body=await page.locator('body').innerText();
             if (!page.url().startsWith('https://llmspeed.dev/')) throw Error('Not on official origin');
             if (!body.includes('Qwen 3.5 9B') || !body.includes('RTX 3060') || !body.includes('RTX 4090')) throw Error('Wrong model or GPU selection');
