@@ -1,0 +1,58 @@
+name: Capture genuine llmspeed Race screenshot
+on:
+  push:
+    branches:
+      - llmspeed-race-capture-20261020
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install screenshot browser
+        run: |
+          mkdir -p /tmp/llmspeed-capture
+          npm install --prefix /tmp/llmspeed-capture --no-audit --no-fund playwright@1.56.0
+          /tmp/llmspeed-capture/node_modules/.bin/playwright install --with-deps chromium
+      - name: Capture official public site Race
+        run: |
+          cat > /tmp/llmspeed-capture/shot.cjs <<'JS'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          (async () => {
+            const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
+            const page = await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1,colorScheme:'dark'});
+            const url = 'https://llmspeed.dev/?hw=rtx-3060,rtx-4090&model=qwen3.5-9b,qwen3.5-9b&quant=q4_k_m,q4_k_m&preset=0&run=1';
+            await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
+            await page.waitForTimeout(18000);
+            const body = await page.locator('body').innerText();
+            console.log('ACTUAL PAGE URL:',page.url());
+            console.log('PAGE TEXT:',body.slice(-5000));
+            if (!page.url().startsWith('https://llmspeed.dev/')) throw Error('Not on official origin');
+            if (!/Qwen 3\.5 9B/i.test(body) || !/3060/.test(body) || !/4090/.test(body)) throw Error('Incorrect model or Race config; refusing screenshot');
+            fs.mkdirSync('screenshots',{recursive:true});
+            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-official-full.png',fullPage:true,animations:'disabled'});
+            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-official-viewport.png',fullPage:false,animations:'disabled'});
+            await browser.close();
+          })().catch(e => { console.error(e); process.exit(1); });
+          JS
+          node /tmp/llmspeed-capture/shot.cjs
+      - name: Upload screenshot artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: llmspeed-qwen35-official-race
+          path: screenshots/*.png
+          if-no-files-found: error
+      - name: Preserve screenshot files on separate screenshot branch
+        run: |
+          git config user.name "GitHub Actions Screenshot Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add screenshots/
+          git commit -m "Save screenshot of genuine llmspeed Qwen 3.5 Race" || true
+          git push origin HEAD:llmspeed-race-capture-20261020 || true
