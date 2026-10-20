@@ -27,18 +27,22 @@ jobs:
           const fs = require('fs');
           (async () => {
             const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
-            const page = await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1,colorScheme:'dark'});
+            const page = await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:2,colorScheme:'dark'});
             const url = 'https://llmspeed.dev/?hw=rtx-3060,rtx-4090&model=qwen3.5-9b,qwen3.5-9b&quant=q4_k_m,q4_k_m&preset=0&run=1';
             await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
-            await page.waitForTimeout(18000);
-            const body = await page.locator('body').innerText();
-            console.log('ACTUAL PAGE URL:',page.url());
-            console.log('PAGE TEXT:',body.slice(-5000));
+            await page.waitForFunction(() => document.body.innerText.includes('finished first'),null,{timeout:20000});
+            let body = await page.locator('body').innerText();
+            console.log('RACE IN PROGRESS:',body.slice(0,1800));
             if (!page.url().startsWith('https://llmspeed.dev/')) throw Error('Not on official origin');
-            if (!/Qwen 3\.5 9B/i.test(body) || !/3060/.test(body) || !/4090/.test(body)) throw Error('Incorrect model or Race config; refusing screenshot');
+            if (!/Qwen 3\\.5 9B/i.test(body) || !/3060/.test(body) || !/4090/.test(body)) throw Error('Incorrect model or Race config; refusing screenshot');
             fs.mkdirSync('screenshots',{recursive:true});
-            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-official-full.png',fullPage:true,animations:'disabled'});
-            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-official-viewport.png',fullPage:false,animations:'disabled'});
+            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-midstream-official.png',clip:{x:250,y:84,width:945,height:440},animations:'disabled'});
+            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-midstream-full.png',fullPage:true,animations:'disabled'});
+            await page.waitForTimeout(6500);
+            body = await page.locator('body').innerText();
+            console.log('FINISHED RACE:',body.slice(0,2400));
+            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-finished-zoom-official.png',clip:{x:250,y:84,width:945,height:440},animations:'disabled'});
+            await page.screenshot({path:'screenshots/llmspeed-qwen35-race-finished-full.png',fullPage:true,animations:'disabled'});
             await browser.close();
           })().catch(e => { console.error(e); process.exit(1); });
           JS
@@ -46,7 +50,7 @@ jobs:
       - name: Upload screenshot artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: llmspeed-qwen35-official-race
+          name: llmspeed-qwen35-clear-race
           path: screenshots/*.png
           if-no-files-found: error
       - name: Preserve screenshot files on separate screenshot branch
